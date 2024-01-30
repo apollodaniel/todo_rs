@@ -6,11 +6,58 @@ pub mod todo{
     pub const MISSING_COMMAND_MSG: &str = include_str!("missing_command.txt");
     pub const MISSING_NAME_MSG: &str = include_str!("missing_name.txt");
 
-
-    pub fn list(){
-        execute_command(TodoCommand::List)
+    pub fn print_list(){
+        let result = list();
+        if let Some(todos) = result{
+            for (index,todo) in todos.iter().enumerate() {
+                println!("{} - {}", index+1, todo);
+            }
+        }else{
+            println!("There's no todo saved yet, try adding something using:");
+            println!("todo_rs add [name]");
+        }
     }
-    pub fn process(command: &str, todo: &str){
+    pub fn list()->Option<Vec<Todo>>{
+        let connection = connect_db();
+
+        match connection {
+            Some(con) => {
+                let result = con.prepare("SELECT * from todo");
+                match result {
+                    Ok(mut stmt) => {
+                        let result =  stmt.query_map([], |f|{
+                            Ok(Todo{
+                                id: f.get(0)?,
+                                content: f.get(1)?,
+                                marked: f.get(2)?                                       
+                            })
+                        });
+                        if let Ok(todos) = result {
+                            let todo_list: Vec<Todo> = todos
+                                .filter(|f| f.is_ok())
+                                .map(|f|f.unwrap()).collect();
+
+                            if todo_list.len() > 0{
+                                Some(todo_list)
+                            }else{
+                                None
+                            }                          
+                        }else{
+                            None
+                        }
+                    },
+                    Err(_)=>{
+                        None
+                    }
+                }
+            },
+            None=>{
+                None
+            }
+        }
+        
+    }
+    pub fn process(command: &str, todo: Vec<&String>){
         match command {
             "add" => execute_command(TodoCommand::Add(todo)),
             "remove" => execute_command(TodoCommand::Remove(todo)),
@@ -51,59 +98,79 @@ pub mod todo{
 
     fn execute_command(command: TodoCommand){
         let connection = connect_db();
+
+        let todo_list = list().unwrap_or(vec![]);
+
         match connection {
             Some(con)=>{
                 match command {
-                    TodoCommand::Add(todo)=>{
-                        let result = con.execute(format!("INSERT INTO todo (content, marked) values ('{}', false)", todo).as_str(), []);
-                        if let Err(e) = result{
-                            println!("Error adding new todo.\n{}",e);
+                    TodoCommand::Add(todos)=>{
+                        for todo in todos{
+                            let result = con.execute(format!("INSERT INTO todo (content, marked) values ('{}', false)", todo).as_str(), []);
+                            if let Err(e) = result{
+                                println!("Error adding new todo.\n{}",e);
+                            }
                         }
-                        list();
                     },
-                    TodoCommand::Remove(todo)=>{
-                        let result = con.execute(format!("DELETE from todo WHERE content IS '{}'", todo).as_str(), []);
+                    TodoCommand::Remove(todos)=>{
+                        for todo in todos{
+                            let id = todo.parse::<usize>();
 
-                        if let Err(e) = result{
-                            println!("Error removing {} todo.\n{}",todo,e);
+                            let where_query = 
+                            if id.is_ok() {
+                                // numeric - Remove by index
+                                format!("rowid = {}", todo_list[id.unwrap()-1].id)
+                            }else{
+                                // content - remove by
+                                format!("content IS '{}'",todo)
+                            };
+
+    
+                            let result = con.execute(format!("DELETE from todo WHERE {}", where_query).as_str(), []);
+    
+                            if let Err(e) = result{
+                                println!("Error removing {} todo.\n{}",todo,e);
+                            }
                         }
-                        list();
                     },
-                    TodoCommand::Mark(todo)=>{
-                        let result = con.execute(format!("UPDATE todo SET marked=true WHERE content is '{}'", todo).as_str(), []);
-                        if let Err(e) = result{
-                            println!("Error marking {} as done.\n{}",todo,e);
+                    TodoCommand::Mark(todos)=>{
+                        for todo in todos{
+                            let id = todo.parse::<usize>();
+
+                            let where_query = 
+                            if id.is_ok() {
+                                // numeric - Remove by index
+                                format!("rowid = {}", todo_list[id.unwrap()-1].id)
+                            }else{
+                                // content - remove by
+                                format!("content IS '{}'",todo)
+                            };
+    
+                            let result = con.execute(format!("UPDATE todo SET marked=true WHERE {}", where_query).as_str(), []);
+                            if let Err(e) = result{
+                                println!("Error marking {} as done.\n{}",todo,e);
+                            }
                         }
-                        list();
+
                     },
-                    TodoCommand::Unmark(todo)=>{
-                        let result = con.execute(format!("UPDATE todo SET marked=false WHERE content is '{}'", todo).as_str(), []);
-                        if let Err(e) = result{
-                            println!("Error unmarking {}.\n{}",todo,e);
-                        }
-                        list();
-                    },
-                    TodoCommand::List=>{
-                        let result = con.prepare("SELECT * from todo");
-                        match result {
-                            Ok(mut stmt) => {
-                                let result =  stmt.query_map([], |f|{
-                                    Ok(Todo{
-                                        content: f.get(1)?,
-                                        marked: f.get(2)?                                       
-                                    })
-                                });
-                                if let Ok(todos) = result {
-                                    let todo_list: Vec<Result<Todo, rusqlite::Error>> = todos.collect();
-                                    for todo in todo_list {
-                                        if todo.is_ok(){
-                                            println!("- {}", todo.unwrap());
-                                        }
-                                    }
-                                }
-                            },
-                            Err(e)=>{
-                                println!("Error when getting todo list.\n{}",e.to_string())
+                    TodoCommand::Unmark(todos)=>{
+                        for todo in todos{
+                        
+                            
+                            let id = todo.parse::<usize>();
+                            
+                            let where_query = 
+                            if id.is_ok() {
+                                // numeric - Remove by index
+                                format!("rowid = {}", todo_list[id.unwrap()-1].id)
+                            }else{
+                                // content - remove by
+                                format!("content IS '{}'",todo)
+                            };
+                            
+                            let result = con.execute(format!("UPDATE todo SET marked=false WHERE {}",where_query).as_str(), []);
+                            if let Err(e) = result{
+                                println!("Error unmarking {}.\n{}",todo,e);
                             }
                         }
                     },
@@ -113,17 +180,20 @@ pub mod todo{
                 println!("Error getting db connection")
             }
         }
+
+        print_list();
+
     }
 
     enum TodoCommand<'a>{
-        Add(&'a str),
-        Remove(&'a str),
-        Mark(&'a str),
-        Unmark(&'a str),
-        List
+        Add(Vec<&'a String>),
+        Remove(Vec<&'a String>),
+        Mark(Vec<&'a String>),
+        Unmark(Vec<&'a String>),
     }
 
-    struct Todo{
+    pub struct Todo{
+        id: u32,
         content: String,
         marked: bool
     }

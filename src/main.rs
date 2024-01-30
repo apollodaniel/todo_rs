@@ -6,15 +6,16 @@ fn main() {
     args.remove(0);
 
     if args.len() >= 2{
-        process(args[0].as_str(), args[1..].join(" ").as_str());
+        let todos_input: Vec<&String> = args[1..].iter().collect();
+        process(args[0].as_str(), todos_input);
     }else if args.len() == 1 {
         if args[0].eq("list"){
-            list();
+            print_list();
         }else{
             println!("{}", MISSING_NAME_MSG);
         }
     }else{
         println!("{}", MISSING_COMMAND_MSG);
     }
-
 }
+
