@@ -63,6 +63,7 @@ pub mod todo{
                     },
                     TodoCommand::Remove(todo)=>{
                         let result = con.execute(format!("DELETE from todo WHERE content IS '{}'", todo).as_str(), []);
+
                         if let Err(e) = result{
                             println!("Error removing {} todo.\n{}",todo,e);
                         }
@@ -88,7 +89,6 @@ pub mod todo{
                             Ok(mut stmt) => {
                                 let result =  stmt.query_map([], |f|{
                                     Ok(Todo{
-                                        id: f.get(0)?,
                                         content: f.get(1)?,
                                         marked: f.get(2)?                                       
                                     })
@@ -97,7 +97,7 @@ pub mod todo{
                                     let todo_list: Vec<Result<Todo, rusqlite::Error>> = todos.collect();
                                     for todo in todo_list {
                                         if todo.is_ok(){
-                                            println!("{}", todo.unwrap());
+                                            println!("- {}", todo.unwrap());
                                         }
                                     }
                                 }
@@ -124,14 +124,17 @@ pub mod todo{
     }
 
     struct Todo{
-        id: u32,
         content: String,
         marked: bool
     }
 
     impl std::fmt::Display for Todo {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-            write!(f, "{} - {} - {}",self.id, self.content, self.marked)
+            if self.marked{
+                write!(f, "\x1B[9m{}\x1B[0m", self.content)
+            }else{
+                write!(f, "{}", self.content)
+            }
         }
     }
 
