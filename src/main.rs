@@ -6,7 +6,7 @@ fn main() {
     args.remove(0);
 
     if args.len() >= 2{
-        process(args[0].as_str(), args[1].as_str());
+        process(args[0].as_str(), args[1..].join(" ").as_str());
     }else if args.len() == 1 {
         if args[0].eq("list"){
             list();
