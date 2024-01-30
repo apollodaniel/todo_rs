@@ -5,18 +5,10 @@ pub mod todo{
 
     pub fn process(command: &str, todo: &str){
         match command {
-            "add" => {
-                
-            },
-            "remove" => {
-
-            },
-            "mark" => {
-
-            },
-            "unmark" => {
-
-            },
+            "add" => execute_command(TodoCommand::Add(todo)),
+            "remove" => execute_command(TodoCommand::Remove(todo)),
+            "mark" => execute_command(TodoCommand::Mark(todo)),
+            "unmark" => execute_command(TodoCommand::Unmark(todo)),
             _=>{
                 println!("{}", INVALID_COMMAND_MSG.replace("<command>", format!("'{}'",command).as_str()));
             }
@@ -75,11 +67,11 @@ pub mod todo{
         }
     }
 
-    enum TodoCommand{
-        Add(String),
-        Remove(String),
-        Mark(String),
-        Unmark(String)
+    enum TodoCommand<'a>{
+        Add(&'a str),
+        Remove(&'a str),
+        Mark(&'a str),
+        Unmark(&'a str)
     }
 
     struct Todo{
