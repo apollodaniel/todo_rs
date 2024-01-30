@@ -1,7 +1,9 @@
 pub mod todo{
     use rusqlite::Connection;
 
-    const INVALID_COMMAND_MSG: &str = include_str!("invalid_command.txt");
+    pub const INVALID_COMMAND_MSG: &str = include_str!("invalid_command.txt");
+    pub const MISSING_COMMAND_MSG: &str = include_str!("missing_command.txt");
+    pub const MISSING_NAME_MSG: &str = include_str!("missing_name.txt");
 
     pub fn process(command: &str, todo: &str){
         match command {

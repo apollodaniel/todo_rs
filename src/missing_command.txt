@@ -1,0 +1,3 @@
+Error: Missing command.
+Usage: todo_rs [command] [name]
+Available commands: add, remove, mark, unmark.

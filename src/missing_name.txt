@@ -1,0 +1,3 @@
+Error: Missing name.
+Usage: todo_rs [command] [name]
+Available commands: add, remove, mark, unmark.
