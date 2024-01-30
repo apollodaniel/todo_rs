@@ -99,7 +99,19 @@ pub mod todo{
     fn execute_command(command: TodoCommand){
         let connection = connect_db();
 
-        let todo_list = list().unwrap_or(vec![]);
+        
+        fn get_where_query(todo: &str) -> String{
+            let todo_list = list().unwrap_or(vec![]);
+            let id = todo.parse::<usize>();
+                            
+            if id.is_ok() {
+                // numeric - Remove by index
+                format!("rowid = {}", todo_list[id.unwrap()-1].id)
+            }else{
+                // content - remove by
+                format!("content IS '{}'",todo)
+            }
+        }
 
         match connection {
             Some(con)=>{
@@ -114,18 +126,8 @@ pub mod todo{
                     },
                     TodoCommand::Remove(todos)=>{
                         for todo in todos{
-                            let id = todo.parse::<usize>();
+                            let where_query = get_where_query(todo);
 
-                            let where_query = 
-                            if id.is_ok() {
-                                // numeric - Remove by index
-                                format!("rowid = {}", todo_list[id.unwrap()-1].id)
-                            }else{
-                                // content - remove by
-                                format!("content IS '{}'",todo)
-                            };
-
-    
                             let result = con.execute(format!("DELETE from todo WHERE {}", where_query).as_str(), []);
     
                             if let Err(e) = result{
@@ -135,16 +137,7 @@ pub mod todo{
                     },
                     TodoCommand::Mark(todos)=>{
                         for todo in todos{
-                            let id = todo.parse::<usize>();
-
-                            let where_query = 
-                            if id.is_ok() {
-                                // numeric - Remove by index
-                                format!("rowid = {}", todo_list[id.unwrap()-1].id)
-                            }else{
-                                // content - remove by
-                                format!("content IS '{}'",todo)
-                            };
+                            let where_query = get_where_query(todo);
     
                             let result = con.execute(format!("UPDATE todo SET marked=true WHERE {}", where_query).as_str(), []);
                             if let Err(e) = result{
@@ -156,18 +149,8 @@ pub mod todo{
                     TodoCommand::Unmark(todos)=>{
                         for todo in todos{
                         
-                            
-                            let id = todo.parse::<usize>();
-                            
-                            let where_query = 
-                            if id.is_ok() {
-                                // numeric - Remove by index
-                                format!("rowid = {}", todo_list[id.unwrap()-1].id)
-                            }else{
-                                // content - remove by
-                                format!("content IS '{}'",todo)
-                            };
-                            
+                            let where_query = get_where_query(todo);
+
                             let result = con.execute(format!("UPDATE todo SET marked=false WHERE {}",where_query).as_str(), []);
                             if let Err(e) = result{
                                 println!("Error unmarking {}.\n{}",todo,e);
