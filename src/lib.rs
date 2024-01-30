@@ -1,8 +1,11 @@
 pub mod todo{
 
+    use std::process::exit;
+
     use rusqlite::Connection;
 
     pub const INVALID_COMMAND_MSG: &str = include_str!("invalid_command.txt");
+    pub const INVALID_INDEX_MSG: &str = include_str!("invalid_index.txt");
     pub const MISSING_COMMAND_MSG: &str = include_str!("missing_command.txt");
     pub const MISSING_NAME_MSG: &str = include_str!("missing_name.txt");
 
@@ -106,7 +109,16 @@ pub mod todo{
                             
             if id.is_ok() {
                 // numeric - Remove by index
-                format!("rowid = {}", todo_list[id.unwrap()-1].id)
+                let todo_result = todo_list.get(id.unwrap()-1);
+                match todo_result {
+                    Some(t) => {
+                        format!("rowid = {}", t.id)
+                    },
+                    None => {
+                        println!("{}", INVALID_INDEX_MSG.replace("<index>", todo));
+                        exit(1)
+                    }
+                }
             }else{
                 // content - remove by
                 format!("content IS '{}'",todo)
