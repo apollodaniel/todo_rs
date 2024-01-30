@@ -9,7 +9,7 @@ fn main() {
         if args[0].eq("list"){
             print_list();
         }else{           
-            let todos_input: Vec<&String> = args[1..].iter().collect();
+            let mut todos_input: Vec<&String> = args[1..].iter().collect();
             process(args[0].as_str(), todos_input);
         }
     }else if args.len() == 1 {

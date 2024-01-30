@@ -124,7 +124,10 @@ pub mod todo{
                             }
                         }
                     },
-                    TodoCommand::Remove(todos)=>{
+                    TodoCommand::Remove(mut todos)=>{
+                        todos.sort_by(|a,b|{
+                            b.cmp(a)
+                        });
                         for todo in todos{
                             let where_query = get_where_query(todo);
 
