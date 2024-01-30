@@ -11,6 +11,7 @@ pub mod todo{
             "remove" => execute_command(TodoCommand::Remove(todo)),
             "mark" => execute_command(TodoCommand::Mark(todo)),
             "unmark" => execute_command(TodoCommand::Unmark(todo)),
+            "list" => execute_command(TodoCommand::List(todo)),
             _=>{
                 println!("{}", INVALID_COMMAND_MSG.replace("<command>", format!("'{}'",command).as_str()));
             }
@@ -53,15 +54,27 @@ pub mod todo{
                         let result = con.execute(format!("INSERT INTO todo (content, marked) values ('{}', false)", todo).as_str(), []);
                         if let Err(e) = result{
                             println!("Error adding new todo.\n{}",e);
-                        } 
+                        }
                     },
                     TodoCommand::Remove(todo)=>{
-                        
+                        let result = con.execute(format!("DELETE from todo WHERE content IS '{}'", todo).as_str(), []);
+                        if let Err(e) = result{
+                            println!("Error removing {} todo.\n{}",todo,e);
+                        }
                     },
                     TodoCommand::Mark(todo)=>{
-        
+                        let result = con.execute(format!("UPDATE todo SET marked=true WHERE content is '{}'", todo).as_str(), []);
+                        if let Err(e) = result{
+                            println!("Error marking {} as done.\n{}",todo,e);
+                        }
                     },
                     TodoCommand::Unmark(todo)=>{
+                        let result = con.execute(format!("UPDATE todo SET marked=false WHERE content is '{}'", todo).as_str(), []);
+                        if let Err(e) = result{
+                            println!("Error unmarking {}.\n{}",todo,e);
+                        }
+                    },
+                    TodoCommand::List(todo)=>{
         
                     },
                 } 
@@ -76,7 +89,8 @@ pub mod todo{
         Add(&'a str),
         Remove(&'a str),
         Mark(&'a str),
-        Unmark(&'a str)
+        Unmark(&'a str),
+        List(&'a str)
     }
 
     struct Todo{
