@@ -18,27 +18,30 @@ pub mod todo{
     }
 
     pub fn connect_db() -> Option<Connection>{
-        let app_folder = simple_home_dir::home_dir().unwrap().join("/.todo_rs");
-        let db_location = app_folder.join("/todo.db");
-        
-        let result = std::fs::create_dir(app_folder);
-        match result {
-            Ok(_) =>{
-                match rusqlite::Connection::open(db_location) {
-                    Ok(con)=>{
-                        match con.execute("CREATE TABLE IF NOT EXISTS todo(id INTEGER PRIMARY KEY AUTOINCREMENT, content TEXT, marked BOOL)", []) {
-                            Ok(_) => Some(con),
-                            Err(_) => None
-                        }                        
-                    }
-                    Err(_) => None
-                }
-            },
-            Err(_) => {
-                println!("There was an error when trying to create the database directory");
-                None
+        let app_folder = simple_home_dir::home_dir().unwrap().join(".todo_rs");
+        let db_location = app_folder.join("todo.db");
+
+        if !app_folder.exists(){
+            if let Err(e) = std::fs::create_dir(app_folder){
+                println!("There was an error when trying to create the database directory\n{}",e.to_string());  
             }
         }
+        if !db_location.exists(){
+            if let Err(e) =  std::fs::File::create(&db_location){
+                println!("There was an error when trying to create the database file\n{}",e.to_string());  
+            }
+        }
+        
+        match rusqlite::Connection::open(db_location) {
+            Ok(con)=>{
+                match con.execute("CREATE TABLE IF NOT EXISTS todo(id INTEGER PRIMARY KEY AUTOINCREMENT, content TEXT, marked BOOL)", []) {
+                    Ok(_) => Some(con),
+                    Err(_) => None
+                }                        
+            }
+            Err(_) => None
+        }
+
     }
 
     fn execute_command(command: TodoCommand){

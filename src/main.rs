@@ -6,7 +6,7 @@ fn main() {
     args.remove(0);
 
     if args.len() >= 2{
-        
+        process(args[0].as_str(), args[1].as_str());
     }else if args.len() == 1 {
         println!("{}", MISSING_NAME_MSG);
     }else{
